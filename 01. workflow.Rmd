@@ -1,0 +1,33 @@
+---
+title: "workflow"
+author: "G.B."
+date: "2024-01-31"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+```
+
+```{r}
+df<-  as.data.frame(Experimente_1_8_tot)
+df <- df[,-1]
+df <- df |> mutate_at(c('Exp', 'Placuta', 'Trat'), as.factor) |> mutate_at(.vars = 4:95, ~ifelse(.=="< LOD", 0, .)) |> mutate_at(.vars = 4:95, as.numeric)
+View(df)
+medii <- df |> group_by(Exp, Placuta, Trat) |> summarise(across(.cols=everything(), mean, na.rm=T)) |> clean_names()
+View(medii)
+elemente <- medii |> dplyr::select(!ends_with("_err"))
+View(elemente)
+sds <- medii |> dplyr::select(ends_with("_err")| trat) 
+sds <- sds |> relocate(trat, .after = placuta)
+View(sds)
+####de facut calculul pentru RSD 100*sds/medii pe coloane
+sds_transposed <- as.data.frame(t(sds))
+View(sds_transposed)
+
+
+```
+

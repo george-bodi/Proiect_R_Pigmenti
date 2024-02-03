@@ -1,0 +1,11 @@
+---
+title: "Pigments"
+author: "G.B."
+date: "2024-01-31"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
