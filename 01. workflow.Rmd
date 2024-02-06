@@ -24,10 +24,20 @@ View(elemente)
 sds <- medii |> dplyr::select(ends_with("_err")| trat) 
 sds <- sds |> relocate(trat, .after = placuta)
 View(sds)
-####de facut calculul pentru RSD 100*sds/medii pe coloane
 sds_transposed <- as.data.frame(t(sds))
+sds_transposed <- sds_transposed[-c(1:3),]
+View(sds_transposed)
+elemente_transposed <- as.data.frame(t(elemente))
+elemente_transposed <- elemente_transposed[-c(1:3),]
+View(elemente_transposed)
+
+sds_transposed <- sds_transposed |> 
+  mutate_if(is.character, as.numeric)
 View(sds_transposed)
 
+
+
+####de facut calculul pentru RSD calculat medii pe rsd si elemente cu mutate, adus coloanele noi rezultate impreuna intr-un tabel nou
 
 ```
 
