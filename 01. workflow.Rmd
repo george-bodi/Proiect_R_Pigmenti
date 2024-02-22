@@ -7,37 +7,97 @@ output: word_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+
 library(tidyverse)
 library(ggplot2)
 library(janitor)
+library(readxl)
+#options(scipen = 9999)
+
+pXRF_pigmenti_final <- read_excel("pXRF_pigmenti_final.xlsx", 
+    sheet = "pigmenti redus")
+
 ```
 
 ```{r}
-df<-  as.data.frame(Experimente_1_8_tot)
-df <- df[,-1]
-df <- df |> mutate_at(c('Exp', 'Placuta', 'Trat'), as.factor) |> mutate_at(.vars = 4:95, ~ifelse(.=="< LOD", 0, .)) |> mutate_at(.vars = 4:95, as.numeric)
+
+df<-  as.data.frame(pXRF_pigmenti_final)
 View(df)
-medii <- df |> group_by(Exp, Placuta, Trat) |> summarise(across(.cols=everything(), mean, na.rm=T)) |> clean_names()
+
+df <- df[,-1]
+
+df <- df |> 
+  mutate_at(c('Exp', 'Placuta', 'Ardere', 'Trat'), as.factor) |> 
+  mutate_at(.vars = 5:18, as.numeric)
+
+View(df)
+
+medii <- df |> 
+  group_by(Exp, Placuta, Ardere, Trat) |> 
+  summarise(across(.cols=everything(), mean, na.rm=T)) |> 
+unite(Exp_Placuta, c(Exp, Placuta), 
+        sep = "_", 
+        remove = TRUE
+        ) |> 
+  mutate_at("Exp_Placuta", as.factor)
 View(medii)
-elemente <- medii |> dplyr::select(!ends_with("_err"))
-View(elemente)
-sds <- medii |> dplyr::select(ends_with("_err")| trat) 
-sds <- sds |> relocate(trat, .after = placuta)
-View(sds)
-sds_transposed <- as.data.frame(t(sds))
-sds_transposed <- sds_transposed[-c(1:3),]
-View(sds_transposed)
-elemente_transposed <- as.data.frame(t(elemente))
-elemente_transposed <- elemente_transposed[-c(1:3),]
-View(elemente_transposed)
 
-sds_transposed <- sds_transposed |> 
-  mutate_if(is.character, as.numeric)
-View(sds_transposed)
+medii_long <- medii |> 
+  pivot_longer(!c(Exp_Placuta,Ardere, Trat), 
+               names_to = "Elemente", 
+               values_to = "Percentage", 
+               names_repair = "minimal"
+               )
+View(medii_long)
 
+medii_long <- medii_long |> 
+    mutate_at(c("Exp_Placuta", "Elemente"), as.factor) |> 
+    mutate(Percentage = as.numeric(Percentage))
+View(medii_long)
 
+medii_long_grouped <- 
+  medii_long |> 
+  group_by(Exp_Placuta, Trat, Elemente) |> 
+  summarise("Percentage%" = mean(Percentage)) 
+  
 
-####de facut calculul pentru RSD calculat medii pe rsd si elemente cu mutate, adus coloanele noi rezultate impreuna intr-un tabel nou
+medii_long_filtered <- 
+  medii_long |> 
+    filter(Elemente != c("Al2O3", "SiO2"))
 
+ggplot(medii_long_filtered, 
+         aes(x = Elemente, 
+             y = Percentage, 
+             group = Exp_Placuta, 
+             col = Exp_Placuta
+             )
+         ) +
+  geom_line() +
+  facet_wrap(~Trat, ncol = 3)
+  
+ggplot(medii_long_filtered, 
+         aes(x = Elemente, 
+             y = Percentage, 
+             group = Trat, 
+             col = Trat
+             )
+         ) +
+  geom_line() +
+  facet_wrap(~Exp_Placuta, ncol = 7) +
+  expand_limits(y = -1) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+ggplot(medii_long_filtered, 
+         aes(x = Trat, 
+             y = Percentage, 
+             group = Exp_Placuta, 
+             col = Exp_Placuta
+             )
+         ) +
+  geom_line() +
+  facet_wrap(~Elemente, ncol = 4) +
+  ylim(0, 25) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+        )
 ```
 
